@@ -1,0 +1,62 @@
+/*
+_RAM_START_LOS = 0x80000000;
+_RAM_SIZE_LOS =  64M;
+*/
+/*
+INCLUDE myriad2_default_memory_map_elf.ldscript
+*/
+
+MEMORY
+{
+  SHV0_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV0_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV1_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV1_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV2_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV2_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV3_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV3_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV4_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV4_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV5_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV5_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV6_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV6_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV7_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV7_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV8_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV8_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV9_CODE (wx)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV9_DATA (w)   : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV10_CODE (wx) : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV10_DATA (w)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  SHV11_CODE (wx) : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+  SHV11_DATA (w)  : ORIGIN = 0x70000000 + 0 * 128K, LENGTH = 0K
+
+  /* The CMX_DMA section must be between the following addreses
+   *  0x78000000 + 12 * 128K
+   *      and
+   *  0x78000000 + 13 * 128K  */
+
+  CMX_DMA_DESCRIPTORS  (wx) : ORIGIN = 0x78000000 + 12 * 128K , LENGTH = 3K
+  CMX_OTHER            (wx) : ORIGIN = 0x70000000 + 12 * 128K + 3K, LENGTH = 128K - 3K
+  DDR_DATA             (wx) : ORIGIN = 0x80000000 + 64M, LENGTH = 128M
+
+  LOS (wx) : ORIGIN = 0x80000000, LENGTH = 64M
+  LRT (wx) : ORIGIN = 0x70000000 + 1 * 128K, LENGTH = 128K
+}
+
+INCLUDE myriad2_leon_default_elf.ldscript
+INCLUDE myriad2_shave_slices.ldscript
+INCLUDE myriad2_default_general_purpose_sections.ldscript
