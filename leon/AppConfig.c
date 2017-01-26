@@ -62,11 +62,12 @@ int initClocksAndMemory(void)
 {    
 	OsDrvCprInit();
     OsDrvCprOpen();
+    //OsDrvCprSetupClocks(&pSocClockConfig);
+
     DrvDdrInitialise(NULL);
 
     // Set the shave L2 Cache mode
     DrvShaveL2CacheSetMode(L2CACHE_CFG);
 
-    OsDrvCprSetupClocks(&pSocClockConfig);
     return 0;
 }
