@@ -4,29 +4,30 @@
 #include <errno.h>
 #include <rtems.h>
 #include <fcntl.h>
-#include "rtems/rtems_bsdnet.h" //rtems_bsdnet_initialize_network()
 #include <assert.h>
+#include "time.h"
+#include "rtems/rtems_bsdnet.h" // rtems_bsdnet_initialize_network()
 #include "sys/types.h"
 #include <sys/socketvar.h>
 #include "sys/socket.h"
 #include <netinet/in.h>
-#include "netdb.h" //gethostbyname
+#include "netdb.h"  // gethostbyname
 #include <sys/ioctl.h>
 #include "net/if.h"
 #include "net/if_var.h"
 #include "arpa/inet.h"
 #include "sys/proc.h"
-#include "AppConfig.h"
 #include <bsp/greth_gbit.h>
 #include <bsp.h>
 #include "DrvGpio.h"
 #include "DrvI2cMaster.h"
 #include "DrvI2c.h"
-#include "OsDrvCpr.h"
-#include "OsDrvTimer.h"
+#include "OsDrvCpr.h" // DEV_CSS_GETH, DEV_CSS_I2C0, ...
 #include "rtems/dhcp.h"
-#include "time.h"
+#include "temp_monitor.h"
+#include "power_monitor.h"
 #include "rtems_config.h"
+#include "AppConfig.h"
 
 // 2:  Source Specific #defines and types  (typedef, enum, struct)
 // ----------------------------------------------------------------------------
@@ -91,17 +92,6 @@
 #define APP_MACADDRESS									"\x94\xDE\x80\x6B\x12\x07"
 
 #define SET_BIT(reg, bit, val) 							(val?(reg |= 1<<bit):(reg &= ~(1<<bit)))
-
-//#define HTTP_HOST_NAME									"www.google.com"
-
-#define HTTP_HOST_NAME                                  "141.58.0.8"
-
-#define HTTP_GET_REQUEST								"GET / HTTP/1.0\r\n\r\n"
-
-#define HTTP_POST_REQUEST "POST /v1/dreamcloud/mf/metrics HTTP/1.0\r\n"
-#define HTTP_HEADER_1 "Content-Type: application/json\r\n"
-#define HTTP_HEADER_2 "Content-Length: %d\r\n\r\n"
-#define HTTP_POST_MSG "[{\"WorkflowID\": \"ms2\",\"ExperimentID\": \"AVUWnydqGMPeuCn4l-cj\",\"TaskID\": \"t2.1\",\"@timestamp\": \"2016-02-15T12:43:48.749\",\"type\": \"power\",\"host\": \"node01.excess-project.eu\",\"GPU1:power\": 168.519}]"
 
 #define CLIENTHOSTNAME									"Myriad2"
 
@@ -296,132 +286,73 @@ void EthPHYHWReset(void)
 	usleep(100 * 1000);    
 }
 
-
-void *networkTask1(void *arg)
+void initGrethAndNet(void)
 {
-    UNUSED(arg);
-
-    int i, s, bytes_read;
-    struct sockaddr_in server_addr;
-    struct in_addr **addr_list;
-    struct hostent* host;
-    char buffer[512];
-        
-    memset(&server_addr, 0, sizeof(server_addr));
-
-    s = socket(PF_INET, SOCK_STREAM, 0);
-	
-    if(s < 0) {
-		printf("ERROR opening socket\n");
-		pthread_exit(0); 
-    }    
+    int res;
+    rtems_greth_gbit_hw_params params;
+    // Setup Greth Gbit parameters
+    params.priority = ETH_ISR_PRIORITY;
+    params.txcount = TDA_COUNT;
+    params.rxcount = RDA_COUNT;
+    params.gbit_check = FALSE;
+    params.read_function = NULL;
+    params.write_function = NULL;
     
-    host = gethostbyname(HTTP_HOST_NAME);
-    if(host != NULL) 
-    {
-		addr_list = (struct in_addr**)host->h_addr_list;
-		printf("\nResolving name to IP addresses: \n");
-		for (i = 0; addr_list[i] != NULL; i++)
-			printf("\n		*Host Address %d: %s\n", i, inet_ntoa(*addr_list[i]));
-		printf("\n");
-	
-		server_addr.sin_family	= AF_INET;
-		server_addr.sin_addr	= *addr_list[0];
-		server_addr.sin_port	= htons(3030);
-    }
-    else
-    {
-		printf("\nERROR: Cannot resolve hostname!\n");
-		pthread_exit(0);
-    }
-    
-    if( connect(s, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0 )
-    {
-		printf("ERROR: Cannot connect to server %s!\n", inet_ntoa(server_addr.sin_addr));
-		pthread_exit(0);
-    }
-    else 
-		printf("Connection is successful to %s.\n", inet_ntoa(server_addr.sin_addr));
-     
-	// print string  
-    //sprintf(buffer, HTTP_GET_REQUEST);
-    sprintf(buffer, HTTP_POST_REQUEST);
-    strcat(buffer, HTTP_HEADER_1);
-    sprintf(buffer+strlen(buffer), HTTP_HEADER_2, strlen(HTTP_POST_MSG));
-    strcat(buffer, HTTP_POST_MSG);
-    printf("sent buffer is %s\n", buffer);
+    // Call setup function
+    res = rtems_leon_greth_gbit_driver_setup(&params);
+    printf("\nrtems_leon_greth_gbit_driver_setup %s \n", rtems_status_text(res));
+    assert(res == RTEMS_SUCCESSFUL);    
 
-    i = send(s, buffer, strlen(buffer), 0);
-    if(i < 0) {
-		printf("HTTP request to %s failed\n", HTTP_HOST_NAME);
-		pthread_exit(0); 
-    }
-    else
-		printf("HTTP request to %s: %d bytes sent\n", HTTP_HOST_NAME, i);
-
-    printf("HTTP response:\n");
-    printf("\n************************************************************************\n");
-	sleep(1);
-    // While there's data, read and print it
-    do
-    {
-        bzero(buffer, sizeof(buffer));
-        bytes_read = recv(s, buffer, sizeof(buffer)-1, MSG_DONTWAIT); //last byte is null termination
-        if (bytes_read > 0) 
-			printf("%s", buffer);
-    } while(bytes_read > 0);
-    printf("\n************************************************************************\n");    
-    close(s);
-    pthread_exit(0); 
-    return NULL; // just so the compiler thinks we returned something
+    res = rtems_bsdnet_initialize_network();
+    assert(res == RTEMS_SUCCESSFUL);
 }
+
 
 void POSIX_Init(void *args)
 {
     UNUSED(args);
 
-    int res;
-    pthread_t thread1;   
-    pthread_attr_t attr; 
-	rtems_greth_gbit_hw_params params;	
-
     initClocksAndMemory();
-    OsDrvTimerInit();
     EthPHYHWReset();
 	InitGpioEth(INVERT_GTX_CLK_CFG);
-	
-	// Setup Greth Gbit parameters
-	params.priority = ETH_ISR_PRIORITY;
-	params.txcount = TDA_COUNT;
-	params.rxcount = RDA_COUNT;
-	params.gbit_check = FALSE;
-	params.read_function = NULL;
-	params.write_function = NULL;
-	
-	// Call setup function
-	res = rtems_leon_greth_gbit_driver_setup(&params);
-	printf("\nrtems_leon_greth_gbit_driver_setup %s \n", rtems_status_text(res));
-	assert(res == RTEMS_SUCCESSFUL);    
+    initGrethAndNet();
+    
+    TempInit();
+    PowerInit();
 
-    res = rtems_bsdnet_initialize_network();
-    assert(res == RTEMS_SUCCESSFUL);	
+    pthread_t thread_temp, thread_power;   
+    pthread_attr_t attr;
+    
+    struct TempSamplesArg temp_args;
+    temp_args.loops_num = 100; //send 100 metrics
+    temp_args.seconds = 1;     //sample interval is 1 second
 
-    if(pthread_attr_init(&attr) !=0) {
-	printk("pthread_attr_init error\n");
-    }
-    if(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) != 0) {
-	printk("pthread_attr_setinheritsched error\n");
-    }
-    if(pthread_attr_setschedpolicy(&attr, SCHED_RR) != 0) {
-	printk("pthread_attr_setschedpolicy error\n");
-    }
-    res = pthread_create(&thread1, &attr, &networkTask1, NULL);
+    struct PowerSamplesArg power_args;
+    power_args.loops_num = 50; //send 50 metrics
+    power_args.seconds = 2;     //sample interval is 2 second
+    
+    if(pthread_attr_init(&attr) !=0)
+	   printk("pthread_attr_init error\n");
+    if(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) != 0)
+	   printk("pthread_attr_setinheritsched error\n");
+    if(pthread_attr_setschedpolicy(&attr, SCHED_RR) != 0)
+	   printk("pthread_attr_setschedpolicy error\n");
+
+    int res;
+    res = pthread_create(&thread_temp, &attr, &TempSamples, &temp_args);
     if (res) {
-	printk("Thread 1 creation failed: %d\n", res);
+	   printk("Thread for TEMPERATURE monitoring creation failed: %d\n", res);
+    }
+    res = pthread_create(&thread_power, &attr, &PowerSamples, &power_args);
+    if (res) {
+        printk("Thread for POWER monitoring creation failed: %d\n", res);
     }
 
-    if( pthread_join(thread1, NULL) )
-	printk("pthread_join error!\n");
+    if( pthread_join(thread_temp, NULL) )
+	   printk("pthread_join error!\n");
+
+    if( pthread_join(thread_power, NULL) )
+        printk("pthread_join error!\n");
     
     exit(0);
 }

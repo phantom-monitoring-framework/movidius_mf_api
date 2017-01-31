@@ -10,6 +10,7 @@ ECHO ?=@
 # overrides that need to be set before including generic.mk
 MV_SOC_PLATFORM ?= myriad2
 MV_SOC_REV      ?= ma2150
+EVM_BOARD_USED   = MV0182
 
 # Set MV_COMMON_BASE relative to mdk directory location (but allow user to override in environment)
 MV_COMMON_BASE  ?= ../../../common
@@ -18,6 +19,7 @@ MV_COMMON_BASE  ?= ../../../common
 MV_SOC_OS = rtems
 
 # Select LOS component list
+ComponentList_LOS  = Board182
 ComponentList_LOS += PipePrint
 
 # ------------------------------[ Tools ]------------------------------------------#
@@ -32,6 +34,7 @@ include $(MV_COMMON_BASE)/generic.mk
 
 # -------------------------------- [ Build Options ] ------------------------------ #
 # App related build options 
-
+CCOPT_LRT += -D$(EVM_BOARD_USED)
+CCOPT     += -D$(EVM_BOARD_USED)
 
 TEST_TAGS:= "MA2150, MA2450"
