@@ -24,10 +24,9 @@
 #include "DrvI2c.h"
 #include "OsDrvCpr.h" // DEV_CSS_GETH, DEV_CSS_I2C0, ...
 #include "rtems/dhcp.h"
-#include "temp_monitor.h"
-#include "power_monitor.h"
 #include "rtems_config.h"
 #include "AppConfig.h"
+#include "mf_api.h"
 
 // 2:  Source Specific #defines and types  (typedef, enum, struct)
 // ----------------------------------------------------------------------------
@@ -312,47 +311,29 @@ void POSIX_Init(void *args)
 {
     UNUSED(args);
 
+    /* NEED FOR USING ETHERNET */
     initClocksAndMemory();
     EthPHYHWReset();
 	InitGpioEth(INVERT_GTX_CLK_CFG);
     initGrethAndNet();
-    
-    TempInit();
-    PowerInit();
 
-    pthread_t thread_temp, thread_power;   
-    pthread_attr_t attr;
-    
-    struct TempSamplesArg temp_args;
-    temp_args.loops_num = 100; //send 100 metrics
-    temp_args.seconds = 1;     //sample interval is 1 second
+    /* SETUP METRICS */
+    metrics m_resources;
+    m_resources.num_metrics = 2;
+    m_resources.local_data_storage = 0;      // TOD: local data storage
+    m_resources.sampling_interval[0] = 1000; // 1s
+    strcpy(m_resources.metrics_names[0], "power_monitor");
+    m_resources.sampling_interval[1] = 1500; // 1.5s
+    strcpy(m_resources.metrics_names[1], "temp_monitor");
 
-    struct PowerSamplesArg power_args;
-    power_args.loops_num = 50; //send 50 metrics
-    power_args.seconds = 2;     //sample interval is 2 second
-    
-    if(pthread_attr_init(&attr) !=0)
-	   printk("pthread_attr_init error\n");
-    if(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED) != 0)
-	   printk("pthread_attr_setinheritsched error\n");
-    if(pthread_attr_setschedpolicy(&attr, SCHED_RR) != 0)
-	   printk("pthread_attr_setschedpolicy error\n");
+    /* START MONITORING */
+    mf_start("141.58.0.8", "movidius", &m_resources);
 
-    int res;
-    res = pthread_create(&thread_temp, &attr, &TempSamples, &temp_args);
-    if (res) {
-	   printk("Thread for TEMPERATURE monitoring creation failed: %d\n", res);
-    }
-    res = pthread_create(&thread_power, &attr, &PowerSamples, &power_args);
-    if (res) {
-        printk("Thread for POWER monitoring creation failed: %d\n", res);
-    }
+    /* DO THE WORK */
+    sleep(15);
 
-    if( pthread_join(thread_temp, NULL) )
-	   printk("pthread_join error!\n");
+    /* STOP MONITORING */
+    mf_end();
 
-    if( pthread_join(thread_power, NULL) )
-        printk("pthread_join error!\n");
-    
     exit(0);
 }
