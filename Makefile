@@ -24,8 +24,6 @@ ComponentList_LOS += PipePrint
 
 # ------------------------------[ Tools ]------------------------------------------#
 # Hardcode tool version here if needed, otherwise defaults to Latest
-#MV_TOOLS_VERSION = 
-
 # Specific Linker 
 LinkerScript    =  ./scripts/ld/custom.ldscript
 
