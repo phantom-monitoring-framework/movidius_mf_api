@@ -10,6 +10,7 @@ void mf_end(void);
 
 ## List of metrics
 The metrics supported by the above APIs are listed in the table as follows:
+
 | Type            | Metrics          | Units  | Description                              |
 |---------------- |----------------  |------  |----------------------------------------- |
 | power_monitor   | power_core       | mW     | power usage of cores                     |
