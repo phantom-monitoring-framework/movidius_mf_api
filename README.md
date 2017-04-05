@@ -48,8 +48,8 @@ It should be noticed that the type of Movidius board should match that given in 
 ## Results
 This example shows the users of Movidius MA2150 about how to monitor power and temperature of various processors and cores using the standard MF APIs. Movidius MF APIs are particular implemented for this embedded machine, although similar interfaces are designed as common MF APIs. 
 
-<mf_start> creates threads for monitoring power and temperature, which can be configured by setting the metrics name and sampling intervals. Each thread runs in a loop, samples the specialized metrics, and uses Movidius network stack to send power and temperature metrics to the monitoring server.
+Function **mf_start** creates threads for monitoring power and temperature, which can be configured by setting the metrics name and sampling intervals. Each thread runs in a loop, samples the specialized metrics, and uses Movidius network stack to send power and temperature metrics to the monitoring server.
 
-<mf_end> terminates the created threads and ends the sampling.
+Function **mf_end** terminates the created threads and ends the sampling.
 
 The APIs prints out also important variables (application ID, task ID, and experiment ID) for metrics query at last.
