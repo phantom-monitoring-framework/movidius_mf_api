@@ -31,14 +31,19 @@
 #include "mf_api.h"
 #include "power_monitor.h"
 
-#define MAX_STR_LEN                                     512
+#define MAX_STR_LEN 512
 
+// Static Local Data
+// ----------------------------------------------------------------------------
 static char http_request[] = "POST /v1/phantom_mf/metrics HTTP/1.0\r\n";
 static char http_headers[] = "Content-Type: application/json\r\nContent-Length: %d\r\n\r\n";
-
 static tyBrd198Handle powerMonHandle;
 static I2CM_Device *i2c2Handle;
 
+// Functions implementation 
+// ----------------------------------------------------------------------------
+
+/* initialize hardware and driver interfaces for power metrics collection */
 void PowerInit(void)
 {
     s32 boardStatus = BoardInitialise(EXT_PLL_CFG_148_24_24MHZ);	//for board MV0182
@@ -55,6 +60,7 @@ void PowerInit(void)
     assert(returnValue == DRV_BRD198_DRV_SUCCESS && "Board 198 init error");
 }
 
+/* sample the current power measurements by calling the driver provided APIs; metrics are formatted into a JSON string */
 void PowerSamples_Once(char *string)
 {
 	tyAdcResultAllRails powRes;
@@ -75,6 +81,8 @@ void PowerSamples_Once(char *string)
         APPLICATION_ID, experiment_id, TASK_ID, local_timestamp, coreMw, ddrMw);
 }
 
+/* the function is executed in a loop, while "running" is set to 1;
+inside the loop: we create ethernet connection with the MF server; sample current power metrics; send the formatted json documents to the server */
 void *PowerSamples(long sampling_interval, char *server)
 {
     struct sockaddr_in server_addr;

@@ -33,6 +33,8 @@
 #include "power_monitor.h"
 #include "mf_api.h"
 
+// Variables declaration  
+// ----------------------------------------------------------------------------
 typedef struct each_metric_t
 {
 	long sampling_interval;
@@ -46,12 +48,20 @@ int num_threads;
 char *experiment_id;
 char *server_name;
 
+// Functions definition
+// ----------------------------------------------------------------------------
 int create_new_experiment(char *server, char *message, char *experiment_id);
 void *MonitorStart(void *arg);
 
+// Functions implementation  
+// ----------------------------------------------------------------------------
+/* @brief Start monitoring with given MF server URL, current platform ID, and specific metrics desired for monitoring 
+ *
+ * @return Unique generated experiment ID is returned on success; otherwise a NULL pointer is returned
+ */
 char *mf_start(char *server, char *platform_id, metrics *m)
 {
-	/*create experiment and get experiment ID */
+	/*create experiment by sending the MF server a msg and get the returned experiment ID */
 	char *msg = calloc(1024, sizeof(char));
 	char *buffer = calloc(256, sizeof(char));
 
@@ -72,6 +82,7 @@ char *mf_start(char *server, char *platform_id, metrics *m)
 		return NULL;
 	}
 
+	/* setup attributes for threads */
 	pthread_attr_t attr;
     if(pthread_attr_init(&attr) !=0)
 	   printk("pthread_attr_init error\n");
@@ -80,6 +91,8 @@ char *mf_start(char *server, char *platform_id, metrics *m)
     if(pthread_attr_setschedpolicy(&attr, SCHED_RR) != 0)
 	   printk("pthread_attr_setschedpolicy error\n");
 
+	/* number of threads == number of plugins; For Movidius platform, there are two plugins available --> power & 
+	                                                                                                  --> temperature */
 	num_threads = m->num_metrics;
 	int t, iret[num_threads];
 	each_metric *each_m = malloc(num_threads * sizeof(each_metric));
@@ -98,6 +111,9 @@ char *mf_start(char *server, char *platform_id, metrics *m)
 	return experiment_id;
 }
 
+/* @brief End monitoring by stopping all the created threads for plugins
+ *
+ */
 void mf_end(void)
 {
 	int t;
@@ -108,6 +124,7 @@ void mf_end(void)
 	}
 }
 
+/* register new experiment by the MF server; the unique generated experiment_id is returned on success */
 int create_new_experiment(char *server, char *message, char *experiment_id)
 {
 	struct sockaddr_in server_addr;
@@ -153,14 +170,17 @@ int create_new_experiment(char *server, char *message, char *experiment_id)
     return 1;
 }
 
+/* start different threads for different plugins and metrics */
 void *MonitorStart(void *arg) {
 	each_metric *metric = (each_metric*) arg;
 	if(strcmp(metric->metric_name, "temp_monitor") == 0) {
 		TempInit();
+		/* sample temperature related metrics within a loop */
 		TempSamples(metric->sampling_interval, server_name);
 	}
 	else if(strcmp(metric->metric_name, "power_monitor") == 0) {
 		PowerInit();
+		/* sample power related metrics within a loop */
 		PowerSamples(metric->sampling_interval, server_name);
 	}
 	else {

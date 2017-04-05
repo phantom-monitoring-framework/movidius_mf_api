@@ -60,8 +60,8 @@
 
 #define CONFIGURE_LIBIO_MAXIMUM_FILE_DESCRIPTORS 			30
 
-
 #define CONFIGURE_MAXIMUM_USER_EXTENSIONS    1
+
 #define CONFIGURE_INITIAL_EXTENSIONS         { .fatal = Fatal_extension }
 
 // 3:  Exported Global Data (generally better to avoid)
@@ -80,11 +80,10 @@ void POSIX_Init (void *args);
 
 #endif // __CONFIG__
 
-//#endif // __RTEMS__
-
 // Program the booting clocks
 // System Clock configuration on start-up
-BSP_SET_CLOCK(DEFAULT_OSC_CLOCK_KHZ, DEFAULT_APP_CLOCK_KHZ, 1, 1, DEFAULT_RTEMS_CSS_LOS_CLOCKS | DEV_CSS_GETH | DEV_CSS_I2C0, DEV_UPA_SHAVE_L2,0,0,0);
+BSP_SET_CLOCK(DEFAULT_OSC_CLOCK_KHZ, DEFAULT_APP_CLOCK_KHZ, 1, 1, DEFAULT_RTEMS_CSS_LOS_CLOCKS | DEV_CSS_GETH | DEV_CSS_I2C0, DEV_UPA_SHAVE_L2, 0, 0, 0);
+
 // Program L2 cache behaviour
 BSP_SET_L2C_CONFIG(1, DEFAULT_RTEMS_L2C_REPLACEMENT_POLICY, DEFAULT_RTEMS_L2C_LOCKED_WAYS,DEFAULT_RTEMS_L2C_MODE, 0, 0);
 

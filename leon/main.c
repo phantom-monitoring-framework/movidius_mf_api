@@ -30,7 +30,6 @@
 
 // 2:  Source Specific #defines and types  (typedef, enum, struct)
 // ----------------------------------------------------------------------------
-
 #define RTEMS_BSP_NETWORK_DRIVER_NAME	 				"gr_eth1"
 #define RTEMS_BSP_NETWORK_DRIVER_ATTACH    				rtems_leon_greth_gbit_driver_attach
 
@@ -39,7 +38,6 @@
 
 // The interrupt priority that the ETH will have, 1 (low) - 15 (high)
 #define ETH_ISR_PRIORITY								5
-
 
 #define IO_RXD_0										(69)
 #define IO_RXD_1										(70)
@@ -101,19 +99,19 @@
 // ----------------------------------------------------------------------------
 struct rtems_bsdnet_ifconfig ifconfig =
 {
-    RTEMS_BSP_NETWORK_DRIVER_NAME, 	//name
+    RTEMS_BSP_NETWORK_DRIVER_NAME, 	  //name
     RTEMS_BSP_NETWORK_DRIVER_ATTACH,  // attach function
-    0, // link to next interface 
-    NULL, //IP address is resolved by DHCP server
-    NULL, //IP net mask is resolved by DHCP server
+    0,              // link to next interface 
+    NULL,           //IP address is resolved by DHCP server
+    NULL,           //IP net mask is resolved by DHCP server
     APP_MACADDRESS, //*hardware_address;
-    0, //broadcast
-    0, //mtu
-    0, //rbuf_count
-    0, //xbuf_count
-    0, //port
-    0, //irno
-    0, //bpar
+    0,   //broadcast
+    0,   //mtu
+    0,   //rbuf_count
+    0,   //xbuf_count
+    0,   //port
+    0,   //irno
+    0,   //bpar
     NULL //Driver control block pointer
 };
 
@@ -121,20 +119,20 @@ struct rtems_bsdnet_config rtems_bsdnet_config =
 {
     &ifconfig,
     rtems_bsdnet_do_dhcp,
-    0, // Default network task priority 
-    APP_MBUF_ALLOCATION,//Default mbuf capacity
-    APP_MBUFCLUSTERALLOCATION,//Default mbuf cluster capacity
-    CLIENTHOSTNAME,//Host name
-    NULL,//Domain name
-    0, //Gateway is resolved by DHCP server
-    NULL,//Log host
-    {NULL},//Name server(s)
-    {NULL},//NTP server(s)
-    0, //sb_efficiency
-    0, //udp_tx_buf_size
-    0, //udp_rx_buf_size
-    0, //tcp_tx_buf_size
-    0, //tcp_rx_buf_size
+    0,                          // Default network task priority 
+    APP_MBUF_ALLOCATION,        //Default mbuf capacity
+    APP_MBUFCLUSTERALLOCATION,  //Default mbuf cluster capacity
+    CLIENTHOSTNAME,             //Host name
+    NULL,                       //Domain name
+    0,                          //Gateway is resolved by DHCP server
+    NULL,                       //Log host
+    {NULL},                     //Name server(s)
+    {NULL},                     //NTP server(s)
+    0,                          //sb_efficiency
+    0,                          //udp_tx_buf_size
+    0,                          //udp_rx_buf_size
+    0,                          //tcp_tx_buf_size
+    0,                          //tcp_rx_buf_size
 };
 
 static u32 commonI2CErrorHandler(I2CM_StatusType i2cCommsError, u32 slaveAddr, u32 regAddr);
@@ -175,8 +173,6 @@ static u8 WM8325protocolRead[] =
 
 // 6: Functions Implementation
 // ----------------------------------------------------------------------------
-
-
 void Fatal_extension(
   Internal_errors_Source  the_source,
   bool                    is_internal,
@@ -289,6 +285,7 @@ void initGrethAndNet(void)
 {
     int res;
     rtems_greth_gbit_hw_params params;
+    
     // Setup Greth Gbit parameters
     params.priority = ETH_ISR_PRIORITY;
     params.txcount = TDA_COUNT;
@@ -306,7 +303,7 @@ void initGrethAndNet(void)
     assert(res == RTEMS_SUCCESSFUL);
 }
 
-
+/* All start here */
 void POSIX_Init(void *args)
 {
     UNUSED(args);
@@ -321,9 +318,9 @@ void POSIX_Init(void *args)
     metrics m_resources;
     m_resources.num_metrics = 2;
     m_resources.local_data_storage = 0;      // TOD: local data storage
-    m_resources.sampling_interval[0] = 1000; // 1s
+    m_resources.sampling_interval[0] = 1000; // 1000 millisecond
     strcpy(m_resources.metrics_names[0], "power_monitor");
-    m_resources.sampling_interval[1] = 1500; // 1.5s
+    m_resources.sampling_interval[1] = 1500; // 1500 millisecond
     strcpy(m_resources.metrics_names[1], "temp_monitor");
 
     /* START MONITORING */

@@ -36,7 +36,7 @@ static const tyAuxClkDividerCfg auxClk[] =
         .auxClockDivNumerator = 1,
         .auxClockDivDenominator = 10,
     },          // setting for use TempSensor
-    {0,0,0,0}, // Null Terminated List
+    {0,0,0,0},  // Null Terminated List
 };
 
 static const tySocClockConfig pSocClockConfig =

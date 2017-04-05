@@ -26,15 +26,20 @@
 #include "mf_api.h"
 #include "temp_monitor.h"
 
-#define MAX_STR_LEN                                     512
+#define MAX_STR_LEN 512
 
+// Static Local Data
+// ----------------------------------------------------------------------------
 static char http_request[] = "POST /v1/phantom_mf/metrics HTTP/1.0\r\n";
 static char http_headers[] = "Content-Type: application/json\r\nContent-Length: %d\r\n\r\n";
 
+// Functions implementation 
+// ----------------------------------------------------------------------------
+
+/* initialize hardware and driver interfaces for temperature metrics collection */
 void TempInit(void)
 {
     DrvTempSensConfig tempParam = {1};
-
     DrvTempSensorInitialise(&tempParam);
     DrvTempSensorSetMode(TSENS_CSS, TSENS_CONTINUOUS_MODE, TSENS_SAMPLE_TEMP);
     DrvTempSensorSetMode(TSENS_MSS, TSENS_CONTINUOUS_MODE, TSENS_SAMPLE_TEMP);
@@ -42,6 +47,7 @@ void TempInit(void)
     DrvTempSensorSetMode(TSENS_UPA1, TSENS_CONTINUOUS_MODE, TSENS_SAMPLE_TEMP);
 }
 
+/* sample the current temperature measurements by calling the driver provided APIs; metrics are formatted into a JSON string */
 void TempSamples_Once(char *string)
 {
     float temperature_CSS, temperature_MSS, temperature_UPA0, temperature_UPA1;
@@ -56,18 +62,14 @@ void TempSamples_Once(char *string)
 	DrvTempSensorGetSample(TSENS_UPA0, &temperature_UPA0);
 	DrvTempSensorGetSample(TSENS_UPA1, &temperature_UPA1);
 
-    /* get the current time of day 
-    rtems_time_of_day daytime;
-    rtems_clock_get_tod(&daytime);*/
-
     memset(string, '\0', strlen(string));
-
     sprintf(string, "{\"WorkflowID\":\"%s\", \"ExperimentID\":\"%s\", \"TaskID\":\"%s\", \"type\":\"temp_monitor\", \"local_timestamp\":\"%.1f\",  \"temperature_CSS\":%f, \"temperature_MSS\":%f, \"temperature_UPA0\":%f, \"temperature_UPA1\":%f}", 
         APPLICATION_ID, experiment_id, TASK_ID, local_timestamp,
         temperature_CSS, temperature_MSS, temperature_UPA0, temperature_UPA1);
 }
 
-
+/* the function is executed in a loop, while "running" is set to 1;
+inside the loop: we create ethernet connection with the MF server; sample current temperature metrics; send the formatted json documents to the server */
 void *TempSamples(long sampling_interval, char *server)
 {
     struct sockaddr_in server_addr;
